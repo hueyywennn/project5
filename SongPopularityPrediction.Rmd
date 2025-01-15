@@ -1,0 +1,1027 @@
+---
+title: "SongPopularityPrediction"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: lumen
+    highlight: espresso
+    code_folding: hide
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,  #suppress messages
+                      warning = FALSE,  #suppress warnings
+                      error = FALSE)    #suppress errors
+```
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Load required libraries
+</h3>
+```{r}
+library(dplyr) #dataframe
+library(tidyr) #tidy data
+library(ggplot2) #data visualization
+library(reshape) #data restructuring and aggregation
+library(reshape2) #data transformation
+library(rpart) #build classificaiton and regression trees
+library(rpart.plot) #scale trees at best fit
+library(caret) #train different algorithms
+library(tidyverse) #data presentation
+library(skimr) #provide summmary statistics
+library(xgboost) #xg boost modelling
+library(caTools) #split train and test sets
+library(Metrics) #supervised machine learning metrics
+```
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Load Dataset
+</h3>
+
+```{r}
+data<-read.csv("spotify.csv")
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+The dataset was stored and called from csv file.
+</h4>
+
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Dataset info
+</h3>
+```{r}
+dim(data) #dataset size
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+The dataset contains 114000 rows and 21 columns.
+</h4>
+
+
+```{r}
+glimpse(data)  #view data types
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+Checking out the data types of attributes in the dataset.
+</h4>
+
+```{r}
+head(data)
+#tail(data)
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+Viewing the head of the dataset.
+</h4>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+View column names
+</h3>
+```{r}
+ls(data)
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+Viewing the list of columns.
+</h4>
+
+
+<span style="
+font-size:15px;
+text-align:Left">
+All the column names with descriptions are shown below.
+
+* ```track_id```: The Spotify ID for the track
+
+* ```artists```: The artists' names who performed the track. If there is more than one artist, they are separated by a ;
+
+* ```album_name```: The album name in which the track appears
+
+* ```track_name```: Name of the track
+
+* ```popularity```: The popularity of a track is a value between 0 and 100, with 100 being the most popular. The popularity is calculated by algorithm and is based, in the most part, on the total number of plays the track has had and how recent those plays are. 
+
+* ```duration_ms```: The track length in milliseconds
+
+* ```explicit```: Whether or not the track has explicit lyrics (true = yes it does; false = no it does not OR unknown)
+
+* ```danceability```: Danceability describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable.
+
+* ```energy```: Energy is a measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. 
+
+* ```key```: The key the track is in. Integers map to pitches using standard Pitch Class notation. E.g. 0 = C, 1 = C♯/D♭, 2 = D, and so on. If no key was detected, the value is -1.
+
+* ```loudness```: The overall loudness of a track in decibels (dB)
+
+* ```mode```: Mode indicates the modality (major or minor) of a track, the type of scale from which its melodic content is derived. Major is represented by 1 and minor is 0.
+
+* ```speechiness```: Speechiness detects the presence of spoken words in a track. 
+
+* ```acousticness```: A confidence measure from 0.0 to 1.0 of whether the track is acoustic. 
+
+* ```instrumentalness```: Predicts whether a track contains no vocals. "Ooh" and "aah" sounds are treated as instrumental in this context. Rap or spoken word tracks are clearly "vocal". The closer the instrumentalness value is to 1.0, the greater likelihood the track contains no vocal content.
+
+* ```liveness```: Detects the presence of an audience in the recording. Higher liveness values represent an increased probability that the track was performed live. A value above 0.8 provides strong likelihood that the track is live.
+
+* ```valence```: A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. 
+
+* ```tempo```: The overall estimated tempo of a track in beats per minute (BPM). 
+
+* ```time_signature```: The time signature (meter) is a notational convention to specify how many beats are in each bar (or measure). 
+
+* ```track_genre```: The genre in which the track belongs.
+</span>
+
+
+<h2 style="
+font-size:25px;
+text-align:center;
+text-decoration: underline;
+font-weight: bold;
+color: red"> 
+DATA CLEANING
+</h2>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Missing value analysis - check which columns have missing values
+</h3>
+```{r}
+is.null(data)
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+No missing values present in the dataset.
+</h4>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Checking for Null values in dataset
+</h3>
+```{r}
+sum(is.null(data))
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+No null values present in the dataset.
+</h4>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Check which columns have NA values
+</h3>
+```{r}
+sum(is.na(data))
+colSums(is.na(data))
+names(which(colSums(is.na(data))>0))
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+No NA values present in the dataset.
+</h4>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Check for duplicated entry
+</h3>
+```{r}
+data[duplicated(data), ] #check for duplicated rows
+sum(data[duplicated(data), ])
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+No duplicated values present in the dataset.
+</h4>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Missing value correlation analysis
+</h3>
+```{r}
+data1<- data %>% select(popularity, mode, instrumentalness)
+cor(data1, data1,  method = "pearson", use = "complete.obs")
+```
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Visualization of Missing value correlation analysis
+</h3>
+```{r}
+heatmap(cor(data1, data1,  method = "pearson", use = "complete.obs"))
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+It can be seen that these missing values do not show up significantly in the overall data set and have no strong correlation. <br>
+
+Hence, missing value rows can be deleted directly.
+</h4>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Delete those rows with missing values
+</h3>
+```{r}
+data<- data %>% drop_na()
+```
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+View dataset info after cleaning
+</h3>
+```{r}
+dim(data)
+tail(data)
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+The dataset contains 113991 rows and 21 columns after removing NA values rows.
+</h4>
+
+
+
+```{r}
+colSums(is.na(data))
+sum(is.na(data))
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+The dataset is cleaned where no columns present with NA values. The dataset shows complete cases.
+</h4>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Transform explicit variable from categorical data into binary data
+</h3>
+```{r}
+data$explicitUpdated<-ifelse(data$explicit =="FALSE", "0", "1")
+data$explicitUpdated <- as.factor(data$explicitUpdated)
+class(data$explicitUpdated)
+levels(data$explicitUpdated)
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+The ```explicit``` attribute will be changed to 0 when it is ```FALSE```, while 1 is ```TRUE```
+</h4>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Transform track_genre to 5 parent_genre
+</h3>
+```{r}
+data<-data %>%
+  mutate(
+    parent_genre= case_when(
+      track_genre =="anime" | track_genre =="brazil" | track_genre =="british" | track_genre =="cantopop" | track_genre =="j-pop" | track_genre =="k-pop" | track_genre =="indie-pop" | track_genre =="malay" | track_genre =="mandopop" | track_genre =="power-pop" | track_genre =="pop-film" | track_genre =="pop" | track_genre =="synth-pop" | track_genre =="trip-hop" | track_genre =="j-idol" | track_genre =="dance" | track_genre =="salsa" | track_genre =="samba" | track_genre =="dancehall" | track_genre =="forro" | track_genre =="garage" | track_genre =="j-dance" | track_genre =="party" | track_genre =="tango" | track_genre =="happy" | track_genre =="disco" | track_genre =="afrobeat" | track_genre =="comedy" | track_genre =="hip-hop" | track_genre =="latin" | track_genre =="latino" | track_genre =="world-music" | track_genre =="mpb" ~ "Pop",
+      track_genre =="blues" | track_genre =="dub" | track_genre =="dubstep" | track_genre =="r-n-b" | track_genre =="reggae" | track_genre =="reggaeton" | track_genre =="soul" | track_genre =="ska" ~ "R & B",
+      track_genre =="alt-rock" | track_genre =="alternative" | track_genre =="emo" | track_genre =="funk" | track_genre =="hard-rock"| track_genre =="psych-rock"| track_genre =="punk-rock"| track_genre =="rock-n-roll" | track_genre =="rock" | track_genre =="rockabilly" | track_genre =="j-rock" | track_genre =="goth" | track_genre =="groove" | track_genre =="grunge" | track_genre =="indie" | track_genre =="iranian" | track_genre =="new-age" | track_genre =="black-metal" | track_genre =="death-metal" | track_genre =="heavy-metal" | track_genre =="metal" | track_genre =="metalcore" | track_genre =="grindcore" | track_genre =="punk" | track_genre =="hardcore" | track_genre =="hardstyle" | track_genre =="industrial" ~ "Rock",
+      track_genre =="edm" | track_genre =="electro" | track_genre =="electronic" | track_genre =="chicago-house" | track_genre =="breakbeat" | track_genre =="club" | track_genre =="deep-house" | track_genre =="detroit-techno" | track_genre =="minimal-techno" | track_genre =="techno" | track_genre =="progressive-house" | track_genre =="trance" | track_genre =="drum-and-bass" | track_genre =="house" | track_genre =="idm" ~ "EDM",
+      track_genre =="acoustic" | track_genre =="folk" | track_genre =="french" | track_genre =="german" | track_genre =="guitar" | track_genre =="sertanejo" | track_genre =="study" | track_genre =="sad" | track_genre =="singer-songwriter" | track_genre =="songwriter" | track_genre =="swedish" | track_genre =="turkish" | track_genre =="gospel" | track_genre =="children" | track_genre =="ambient" | track_genre =="chill" | track_genre =="classical" | track_genre =="disney" | track_genre =="kids" | track_genre =="opera" | track_genre =="jazz" | track_genre =="piano" | track_genre =="romance" | track_genre =="indian" | track_genre =="show-tunes" | track_genre =="sleep" | track_genre =="spanish" | track_genre =="bluegrass" | track_genre == "country" | track_genre =="honky-tonk" | track_genre =="pagode" ~ "Classical"
+            )
+    )
+    
+colSums(is.na(data))
+
+data$parent_genre<- as.factor(data$parent_genre)
+data$parent_genre_class<- as.numeric(data$parent_genre)
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+The ```track_genre``` attribute will be changed to ```parent_genre``` of 5 categories  (pop, r&b, rock, edm, classical) and factor data into numerical data of 1 to 5.
+</h4>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Convert all attributes into numerical data
+</h3>
+```{r}
+data$popularity<- as.numeric(data$popularity)
+data$duration_ms<- as.numeric(data$duration_ms)
+data$explicitUpdated<- as.numeric(data$explicitUpdated)
+data$danceability<- as.numeric(data$danceability)
+data$energy<- as.numeric(data$energy)
+data$key<- as.numeric(data$key)
+data$loudness<- as.numeric(data$loudness)
+data$mode<- as.numeric(data$mode)
+data$speechiness<- as.numeric(data$speechiness)
+data$acousticness<- as.numeric(data$acousticness)
+data$instrumentalness<- as.numeric(data$instrumentalness)
+data$liveness<- as.numeric(data$liveness)
+data$valence<- as.numeric(data$valence)
+data$tempo<- as.numeric(data$tempo)
+
+```
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Transform '''popularity''' attribute to 4 categories
+</h3>
+```{r}
+data$popularity_class<-ifelse(data$popularity < 25, "Not Popular",
+                              ifelse(data$popularity >= 25 & data$popularity <= 50, "Less Popular",
+                                     ifelse(data$popularity >= 50 & data$popularity <= 75, "Popular", "Most Popular")))
+
+# data$popularity_class<-ifelse(data$popularity <25, "Not Popular", 
+#                               ifelse(data$popularity >= 25 & data$popularity <= 50, "Popular", "Most Popular"))
+
+class(data$popularity_class)
+data$popularity_class <- as.factor(data$popularity_class)
+class(data$popularity_class)
+levels(data$popularity_class)
+data$popularity_class<- factor((data$popularity_class), levels = c("Not Popular", "Less Popular", "Popular", "Most Popular"))
+levels(data$popularity_class)
+
+data$popularity_class<- as.numeric(data$popularity_class)
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+The ```popularity``` attribute will be changed to '''popularity_class''' of 4 categories (Not Popular, Less Popular, Popular, Most Popular) and factor data into numerical data of 1 to 4.
+</h4>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Display summary of dataset
+</h3>
+```{r}
+str(data)
+summary(data)
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+Here it consists of statistical summary of the dataset.
+</h4>
+
+<h2 style="
+font-size:25px;
+text-align:center;
+text-decoration: underline;
+font-weight: bold;
+color: red"> 
+DATA NORMALIZATION
+</h2>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Combine selected attributes needed for normalization and stored into data_trans
+</h3>
+```{r}
+data_trans <- subset(data, select = c(key, loudness, speechiness, instrumentalness, liveness, tempo, duration_ms))
+head(data_trans)
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+Few attributes were selected and put into subset ```data_trans``` as it requires data normalization.
+</h4>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Normalize the data types using Min-Max scaler, combine and form a new dataframe for cleaned dataset
+</h3>
+```{r}
+data_norm <- as.data.frame(apply(data_trans, 2, function(x) (x-min(x))/(max(x)-min(x))))
+
+data_norm$danceability <- data$danceability
+data_norm$energy <- data$energy
+data_norm$acousticness <- data$acousticness
+data_norm$valence <- data$valence
+data_norm$time_signature <- data$time_signature
+data_norm$parent_genre_class <- data$parent_genre_class
+data_norm$popularity_class <- data$popularity_class
+head(data_norm)
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+The ```key```, ```loudness```, ```speechiness```, ```instrumentalness```, ```liveness```, ```tempo```, ```duration_ms``` attributes undergoes data normalization to better organize and simplify the data and were stored into a new dataframe ```data_norm```. Other attributes that are not required to undergo data normalization were selected and copied into the new dataframe as well.
+</h4>
+
+
+<h2 style="
+font-size:25px;
+text-align:center;
+text-decoration: underline;
+font-weight: bold;
+color: red"> 
+EXPLORATORY DATA ANALYSIS (EDA)
+</h2>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+EDA is a critical process of investigating and exploring further insights on the dataset selected
+</h3>
+```{r}
+ggplot(data, aes(x = popularity_class)) + geom_histogram()
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+The above histogram visualized the spread of popularity values across the dataset that was separated into 4 categories.
+</h4>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Generate plots for all attributes in ```data_norm```
+</h3>
+```{r}
+for (col in 2:ncol(data_norm)) {
+    hist(data_norm[,col], main=colnames(data_norm)[col],  xlab=colnames(data_norm)[col])
+}
+```
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Generate correlation analysis and plot heatmap using ```data_norm```
+</h3>
+```{r}
+ht_cor <- cor(data_norm)
+heatmap(ht_cor, scale="column", col = terrain.colors(256))
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+Here it shows the correlation among the attributes in data_norm.
+</h4>
+
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Relation between danceability and popularity
+</h3>
+```{r}
+ggplot(data, aes(x = danceability, y = popularity)) +
+   geom_point(alpha = 0.1) +
+   geom_density_2d()
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+From the scatter plot diagram, it can be deduced that when there is higher score in danceability, it resulted in higher popularity scores.
+</h4>
+
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Relation between energy and popularity
+</h3>
+```{r}
+par(mfrow = c(3, 2))
+
+# Draw the first subgraph
+plot(data$energy[1:1000], data$popularity[1:1000])
+
+# Draw the second subgraph
+plot(data$energy[301:600], data$popularity[301:600])
+```
+
+```{r}
+ggplot(data, aes(x = energy, y = popularity)) +
+   geom_point(alpha = 0.1) +
+   geom_density_2d()
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+From the result, there is negative correlation between energy and popularity.
+</h4>
+
+
+
+<h2 style="
+font-size:25px;
+text-align:center;
+text-decoration: underline;
+font-weight: bold;
+color: red"> 
+DATA MODELLING - EXTREME GRADIENT BOOSTING (XG BOOST)
+</h2>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+XG Boost supervised machine learning prediction model; split into 70% training and 30% testing set; maximum depth for decision tree = 6; 500 maximum iterations.
+</h3>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+This is another method to display the dataframe details but of one row per variable analysis.
+</h3>
+```{r}
+skim_to_wide(data_norm)
+```
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+* Split the normalized data into 70% training and 30% testing set using ```createDataPartition```<br>
+* Define predictor and target variables for both training and testing, ```train_x```,  ```train_y```, ```test_x```, and ```test_y```<br>
+* Finalized XG Boost training and testing sets for 500 iterations, ```xgb_train``` and ```xgb_test```
+</h3>
+```{r}
+index <- createDataPartition(y = data_norm$popularity_class, 
+                             p = 0.7, 
+                             list = FALSE)
+train <- data_norm[index, ]
+test <- data_norm[-index, ]
+rm(index)
+
+#training predictor and target variables
+train_x <- data.matrix(train[, -14])
+train_y <- train[, 14]
+
+#testing predictor and target variables
+test_x <- data.matrix(test[, -14])
+test_y <- test[, 14]
+
+#finalized training and testing sets
+xgb_train <- xgb.DMatrix(data = train_x, label = train_y)
+xgb_test <- xgb.DMatrix(data = test_x, label = test_y)
+
+```
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Store and visualize the 500 iterations into a list using the ```watchlist``` parameter 
+</h3>
+```{r}
+#define watchlist
+list_created <- list(train = xgb_train, test = xgb_test)
+
+#show training and testing data for xg boost
+model <- xgb.train(data = xgb_train, max.depth = 6, watchlist = list_created, nrounds = 500)
+```
+
+```{r}
+#finalized parameters for xg boost
+final <- xgboost(data = xgb_train, max.depth = 6, nrounds = 500, verbose = 0)
+
+#make predictions from training data on testing data
+pred_y <- predict(final, xgb_test)
+```
+
+<h2 style="
+font-size:25px;
+text-align:center;
+text-decoration: underline;
+font-weight: bold;
+color: red"> 
+MODEL PERFORMANCE EVALUATION - EXTREME GRADIENT BOOSTING (XG BOOST)
+</h2>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+To carry out the prediction accuracy using Mean Squared Error ```MSE```, Mean Average Error ```MAE```, and Root Mean Squared Error ```RMSE``` metrics with ```caret```
+</h3>
+```{r}
+#evaluate model
+mse = mean((test_y - pred_y)^2)
+mae = caret::MAE(test_y, pred_y)
+rmse = caret::RMSE(test_y, pred_y)
+
+cat("MSE: ", mse, "MAE: ", mae, " RMSE: ", rmse)
+```
+
+
+
+
+
+
+
+
+
+<h2 style="
+font-size:25px;
+text-align:center;
+text-decoration: underline;
+font-weight: bold;
+color: red"> 
+DATA MODELLING - MULTIPLE LINEAR REGRESSION
+</h2>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Linear regression
+</h3>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Remove target variable from normalized data and create a boxplot
+</h3>
+```{r}
+temp_data <- subset(data_norm, select = -c(popularity_class))
+melt_data <- melt(temp_data)
+
+boxplot(data = melt_data, value ~ variable)
+```
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+* Split the normalized data into 70% training and 30% testing set using ```sample.split``` from ```caTools``` <br>
+* Fit the linear model using ```lm()``` function and create 
+summary of the model
+</h3>
+```{r}
+set.seed(42)
+
+#split training and testing data
+partition <- sample.split(Y = data_norm$popularity_class, SplitRatio = 0.7)
+train_set <- subset(x = data_norm, partition == TRUE)
+test_set <- subset(x = data_norm, partition == FALSE)
+
+#fit linear model and summarize results
+model5 <- lm(popularity_class ~ ., data = train_set)
+summary(model5)
+```
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Define and visualized residuals with ```ggplot``` (histogram)
+</h3>
+```{r}
+#get residuals 
+lm_residuals <- as.data.frame(residuals(model5))
+
+#visualized residuals
+ggplot(lm_residuals, aes(residuals(model5))) + geom_histogram(fill = "pink", color = "black") + theme_classic() + labs(title = "Residuals Plot")
+```
+<h4 style="
+font-size:15px;
+text-align:Right;
+font-style: italic;
+color: orange"> 
+The obtained residuals is skewed towards the left which suggests possible errors on the right.
+</h4>
+
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+* Create predictions by applying the model on testing set using ```predict()``` <br>
+* Store and print results into a dataframe named ```evaluation```
+</h3>
+```{r}
+#make prediction
+prediction <- predict(model5, test_set)
+
+#convert the results into a dataframe 
+evaluation <- cbind(test_set$popularity_class, prediction)
+colnames(evaluation) <- c("Actual", "Predicted")
+evaluation <- as.data.frame(evaluation)
+head(evaluation)
+```
+
+<h2 style="
+font-size:25px;
+text-align:center;
+text-decoration: underline;
+font-weight: bold;
+color: red"> 
+MODEL PERFORMANCE EVALUATION - MULTIPLE LINEAR REGRESSION 
+</h2>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+To carry out the prediction accuracy using Mean Squared Error ```MSE```, Mean Average Error ```MAE```, and Root Mean Squared Error ```RMSE``` metrics with ```Metrics```
+</h3>
+```{r}
+#library(Metrics)
+#evaluate model
+mse <- mean((evaluation$Actual - evaluation$Predicted)^2)
+mae <- mae(evaluation$Actual, predict(model5))
+rmse <- sqrt(mse)
+
+cat("MSE: ", mse, "MAE: ", mae, " RMSE: ", rmse)
+```
+
+
+
+
+
+
+
+
+
+
+<h2 style="
+font-size:25px;
+text-align:center;
+text-decoration: underline;
+font-weight: bold;
+color: red"> 
+DATA MODELLING - DECISION TREE 
+</h2>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Split the normalized data into 70% training and 30% testing set using ```createDataPartition```
+</h3>
+```{r}
+set.seed(10000)
+#split training and testing data
+index <- createDataPartition(y = data_norm$popularity_class,
+                             p = 0.7,
+                             list = FALSE)
+train_data <- data_norm[index, ]
+test_data <- data_norm[-index, ]
+rm(index)
+
+#head(train_data)
+#head(test_data)
+```
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Create classification model with 10 fold cross-validation for ```xval = 10``` and plot the decision tree ```plot()```
+</h3>
+```{r}
+#classification
+set.seed(100)
+full_classification <- rpart(formula = popularity_class~.,
+                             data = train_data,
+                             method = "class",
+                             xval = 10)
+rpart.plot(full_classification)
+```
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Display CP table for fitted decision tree with ```printcp```
+</h3>
+```{r}
+#show summary
+printcp(full_classification)
+```
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Display graph of cp values to cross validated error summary with ```plotcp()```
+</h3>
+```{r}
+#show graph
+plotcp(full_classification)
+```
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Prune using ```prune()``` and plot decision tree by specifying the cp (associated cost-complexity)
+</h3>
+```{r}
+#pruning the model
+data_classification <- prune(full_classification,
+                             cp = full_classification$cptable[which.min(full_classification$cptable[, "xerror"]), "CP"])
+rm(full_classification)
+
+#plot results
+rpart.plot(data_classification, yesno = TRUE)
+```
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Create predictions by applying the model on testing set using ```predict()```
+</h3>
+```{r}
+#make prediction
+data_classification_pred <- predict(data_classification,
+                                    test_data,
+                                    type = "class")
+plot(test_data$popularity_class, data_classification_pred, main = "Classification - Predict vs Actual", xlab = "Actual", ylab = "Predicted")
+```
+
+<h2 style="
+font-size:25px;
+text-align:center;
+text-decoration: underline;
+font-weight: bold;
+color: red"> 
+MODEL PERFORMANCE EVALUATION - DECISION TREE  
+</h2>
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Decision tree supervised machine learning algorithm
+</h3>
+
+
+<h3 style="
+font-size:15px;
+text-align:Left;
+font-style: italic;
+color: blue"> 
+Create confusion matrix to evaluate the model accuracy with ```confusionMatrix```
+</h3>
+```{r}
+#evaluate model
+data_classification_confusion <- confusionMatrix(data = as.factor(data_classification_pred),
+                                                 reference = as.factor(test_data$popularity_class))
+
+data_classification_confusion
+```
