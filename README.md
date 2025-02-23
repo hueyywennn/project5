@@ -11,7 +11,7 @@ Performed a Spotify Song Popularity data analysis to explore factors influencing
 | `artists`             | The artists' names who performed the track. If there is more than one artist, they are separated by a semicolon (;).                          |
 | `album_name`          | The album name in which the track appears.                                                                                                    |
 | `track_name`          | Name of the track.                                                                                                                           |
-| `popularity`          | The popularity of a track, a value between 0 and 100. It is calculated by an algorithm and is mainly based on the total number of plays and recency. |
+| `popularity`          | The popularity of a track, a value between 0 and 100. An algorithm calculates it and is mainly based on the total number of plays and recency. |
 | `duration_ms`         | The track length in milliseconds.                                                                                                            |
 | `explicit`            | Whether or not the track has explicit lyrics. (true = yes; false = no or unknown).                                                           |
 | `danceability`        | Describes how suitable a track is for dancing, based on tempo, rhythm stability, beat strength, and overall regularity. Ranges from 0.0 to 1.0. |
@@ -25,7 +25,7 @@ Performed a Spotify Song Popularity data analysis to explore factors influencing
 | `liveness`            | Detects the presence of an audience in the recording. Values above 0.8 indicate a live performance.                                           |
 | `valence`             | A measure from 0.0 to 1.0 describing the musical positiveness conveyed by the track.                                                         |
 | `tempo`               | The overall estimated tempo of a track in beats per minute (BPM).                                                                            |
-| `time_signature`      | The time signature (meter) specifying how many beats are in each bar (or measure).                                                           |
+| `time_signature`      | The time signature (meter) specifies how many beats are in each bar (or measure).                                                           |
 | `track_genre`         | The genre to which the track belongs.                                                                                                        |
 
 ### Features
@@ -39,10 +39,10 @@ Performed a Spotify Song Popularity data analysis to explore factors influencing
   -	Distribution Plots: histograms, scatter plots, box plots,
 3. **Machine Learning Models**
   -	Feature Engineering: 
-  -	Classifier Algorithms: eXtreme Gradient Boosting (XG BOOST), desicion trees
+  -	Classifier Algorithms: eXtreme Gradient Boosting (XG BOOST), decision trees
   -	Regression Algorithms: multiple linear regression
   -	Model Evaluation: MSE, MAE, RMSE, confusion matrix
-  -	Predictive Modeling: eXtreme Gradient Boosting (XG BOOST), desicion trees, multiple linear regression
+  -	Predictive Modeling: eXtreme Gradient Boosting (XG BOOST), decision trees, multiple linear regression
 4. **Interactive Visualizations**
   -	null
 
