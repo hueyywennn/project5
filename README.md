@@ -2,7 +2,7 @@
 ![R](https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=r&logoColor=white)
 
 ## Project Overview
-Performed a Spotify Song Popularity data analysis to explore factors influencing song popularity on the platform. Utilized descriptive statistics and machine learning techniques to analyze song features such as tempo, energy, and danceability.
+This project aims to analyze and predict the popularity of Spotify songs using various song attributes. By leveraging machine learning techniques, we explore how features like tempo, energy, and danceability influence a song's popularity.
 
 ### Dataset 
 | Name                  | Description                                                                                                                                  |
@@ -28,28 +28,28 @@ Performed a Spotify Song Popularity data analysis to explore factors influencing
 | `time_signature`      | The time signature (meter) specifies how many beats are in each bar (or measure).                                                           |
 | `track_genre`         | The genre to which the track belongs.                                                                                                        |
 
-### Features
-1. **Data Cleaning**
-  -	Check missing values, null values, and duplicated values
-  -	Data Transformation: grouping genres into bigger categories (parent genres)
-  -	Data Normalization: min-max scaler
-2. **Exploratory Data Analysis (EDA)**
-  -	Statistical Summaries: mean, median, variance, and standard deviation
-  -	Correlation Analysis: heatmap correlations
-  -	Distribution Plots: histograms, scatter plots, box plots,
-3. **Machine Learning Models**
-  -	Feature Engineering: 
-  -	Classifier Algorithms: eXtreme Gradient Boosting (XG BOOST), decision trees
-  -	Regression Algorithms: multiple linear regression
-  -	Model Evaluation: MSE, MAE, RMSE, confusion matrix
-  -	Predictive Modeling: eXtreme Gradient Boosting (XG BOOST), decision trees, multiple linear regression
-4. **Interactive Visualizations**
-  -	null
+## Project Objectives
+1. **Data Cleaning & Preprocessing**: Handling missing values, transforming categorical data, and normalizing numerical features.
+2. **Exploratory Data Analysis (EDA)**: Understanding patterns, correlations, and distributions of song features.
+3. **Feature Engineering**: Extracting relevant features to improve model performance.
+4. **Model Training & Evaluation**: Implementing and assessing different machine learning models to predict song popularity.
 
-## Tools used 
-1. **Programming Language** 
-   - R
-2. **Libraries**
-   - dplyr, ggplot2, caret, xgboost
-3. **Visualization Tools**
-   - ggplot2, plotly
+## Machine Learning Models Used
+- **Multiple Linear Regression**: Used for predicting numerical popularity scores.
+- **Decision Trees**: A non-linear model for better feature interpretation.
+- **eXtreme Gradient Boosting (XGBoost)**: An advanced ensemble learning method for improving accuracy.
+
+## Technologies Used
+- **Programming Language**: R
+- **Libraries**: dplyr, ggplot2, caret, xgboost
+- **Data Processing**: dplyr for data manipulation
+- **Visualization Tools**: ggplot2, plotly for graphical analysis
+
+## Project Workflow
+1. **Data Acquisition**: Load and inspect the dataset.
+2. **Data Cleaning & Processing**: Handle missing values, normalize numerical variables, and transform categorical features.
+3. **Exploratory Data Analysis (EDA)**: Generate descriptive statistics, correlation heatmaps, and distribution plots.
+4. **Feature Engineering**: Select relevant features that impact song popularity.
+5. **Model Training**: Train Multiple Linear Regression, Decision Trees, and XGBoost models.
+6. **Model Evaluation**: Compare model performance using MSE, MAE, and RMSE.
+7. **Results Interpretation**: Draw insights and conclusions from the predictive analysis.
